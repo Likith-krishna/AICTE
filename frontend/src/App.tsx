@@ -5,6 +5,9 @@ import { AppShell } from '@/components/layout/AppShell';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ApplicationsPage } from '@/pages/ApplicationsPage';
+import { ApplicationDetailPage } from '@/pages/ApplicationDetailPage';
+import { NewApplicationPage } from '@/pages/NewApplicationPage';
+import { ApplicationFormPage } from '@/pages/ApplicationFormPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { InstitutionsPage } from '@/pages/InstitutionsPage';
@@ -13,7 +16,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: 1,
+      // Do not retry authorisation/validation failures; retry transient errors once.
+      retry: (count, err) => {
+        const status = (err as { status?: number }).status ?? 0;
+        return status >= 500 || status === 0 ? count < 1 : false;
+      },
     },
   },
 });
@@ -28,6 +35,9 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
               <Route path="applications" element={<ApplicationsPage />} />
+              <Route path="applications/new" element={<NewApplicationPage />} />
+              <Route path="applications/:id" element={<ApplicationDetailPage />} />
+              <Route path="applications/:id/edit" element={<ApplicationFormPage />} />
               <Route path="institutions" element={<InstitutionsPage />} />
               <Route path="scrutiny" element={<PlaceholderPage title="Scrutiny" description="Review applications and record observations" />} />
               <Route path="compliance" element={<PlaceholderPage title="Compliance" description="Track compliance obligations and evidence submissions" />} />

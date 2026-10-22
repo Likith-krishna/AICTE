@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
 interface PageHeaderProps {
   title: string;
@@ -11,12 +12,12 @@ export function PageHeader({ title, description, actions, breadcrumbs }: PageHea
   return (
     <div className="mb-6">
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex items-center gap-1.5 text-xs text-brand-text-muted mb-2">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs text-brand-text-muted mb-2">
           {breadcrumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1.5">
               {i > 0 && <span>/</span>}
               {crumb.href ? (
-                <a href={crumb.href} className="hover:text-brand-primary">{crumb.label}</a>
+                <Link to={crumb.href} className="hover:text-brand-primary">{crumb.label}</Link>
               ) : (
                 <span className="text-ink-charcoal">{crumb.label}</span>
               )}
@@ -24,14 +25,14 @@ export function PageHeader({ title, description, actions, breadcrumbs }: PageHea
           ))}
         </nav>
       )}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-ink-charcoal">{title}</h1>
           {description && (
             <p className="text-sm text-brand-text-muted mt-1">{description}</p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
       </div>
     </div>
   );

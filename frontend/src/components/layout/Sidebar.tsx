@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import type { RoleName } from '@/types/api';
+import { APPLICATION_ROLES } from '@/lib/labels';
 
 interface NavItem {
   label: string;
@@ -16,8 +17,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <LayoutDashboard size={18} /> },
-  { label: 'Applications', path: '/applications', icon: <FileText size={18} /> },
-  { label: 'Institutions', path: '/institutions', icon: <Building2 size={18} />, roles: ['system_admin', 'regional_officer', 'bureau_officer', 'scrutiny_officer', 'competent_authority'] },
+  { label: 'Applications', path: '/applications', icon: <FileText size={18} />, roles: [...APPLICATION_ROLES] },
+  { label: 'Institutions', path: '/institutions', icon: <Building2 size={18} />, roles: ['system_admin', 'regional_officer', 'regional_coordinator', 'bureau_officer', 'scrutiny_officer', 'competent_authority'] },
   { label: 'Scrutiny', path: '/scrutiny', icon: <ClipboardCheck size={18} />, roles: ['scrutiny_officer', 'regional_officer', 'regional_coordinator', 'bureau_officer'] },
   { label: 'Compliance', path: '/compliance', icon: <Shield size={18} /> },
   { label: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
@@ -65,6 +66,7 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === '/'}
             className={({ isActive }) =>
               `flex items-center gap-3 mx-2 px-3 py-2.5 rounded text-sm transition-colors ${
                 isActive

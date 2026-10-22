@@ -5,24 +5,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { api, ApiError } from '@/lib/api';
-import type { PaginatedResponse, UserDetail, Role, Region } from '@/types/api';
+import type { PaginatedResponse, UserDetail, Role, Region, InstitutionDetail } from '@/types/api';
+import { ROLE_LABELS } from '@/lib/labels';
 
-const ROLE_LABELS: Record<string, string> = {
-  system_admin: 'System Admin',
-  bureau_officer: 'Bureau Officer',
-  regional_officer: 'Regional Officer',
-  regional_coordinator: 'Regional Coordinator',
-  scrutiny_officer: 'Scrutiny Officer',
-  evc_chair: 'EVC Chair',
-  evc_member: 'EVC Member',
-  competent_authority: 'Competent Authority',
-  appellate_authority: 'Appellate Authority',
-  institution_head: 'Institution Head',
-  institution_applicant: 'Institution Applicant',
-  institution_viewer: 'Institution Viewer',
-  rule_admin: 'Rule Admin',
-  audit_reviewer: 'Audit Reviewer',
-};
 
 export function UsersPage() {
   const queryClient = useQueryClient();
@@ -50,6 +35,11 @@ export function UsersPage() {
   const { data: regions } = useQuery({
     queryKey: ['regions'],
     queryFn: () => api.get<Region[]>('/institutions/regions'),
+  });
+
+  const { data: institutions } = useQuery({
+    queryKey: ['institutions-all'],
+    queryFn: () => api.get<PaginatedResponse<InstitutionDetail>>('/institutions?page_size=100'),
   });
 
   const deactivateMutation = useMutation({
@@ -94,7 +84,7 @@ export function UsersPage() {
             onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
           >
             <option value="">All Roles</option>
-            {Object.entries(ROLE_LABELS).map(([key, label]) => (
+            {Object.entries(ROLE_LABELS).filter(([key]) => key !== 'system').map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
@@ -134,7 +124,7 @@ export function UsersPage() {
                         {u.institution_name || '—'}
                       </td>
                       <td>
-                        <span className={u.is_active ? 'badge-success' : 'badge-danger'}>
+                        <span className={u.is_active ? 'badge-success' : 'badge-error'}>
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -200,6 +190,7 @@ export function UsersPage() {
           user={editingUser}
           roles={roles || []}
           regions={regions || []}
+          institutions={institutions?.items || []}
           onClose={() => setShowModal(false)}
           onSaved={() => {
             setShowModal(false);
@@ -215,12 +206,14 @@ function UserModal({
   user,
   roles,
   regions,
+  institutions,
   onClose,
   onSaved,
 }: {
   user: UserDetail | null;
   roles: Role[];
   regions: Region[];
+  institutions: InstitutionDetail[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -342,6 +335,27 @@ function UserModal({
               ))}
             </select>
           </div>
+
+          {(form.role === 'institution_applicant' || form.role === 'institution_signatory') && (
+            <div>
+              <label className="label" htmlFor="user-institution">Institution</label>
+              <select
+                id="user-institution"
+                className="input w-full"
+                value={form.institution_id}
+                onChange={(e) => {
+                  const inst = institutions.find((i) => i.id === e.target.value);
+                  setForm({ ...form, institution_id: e.target.value, region_id: inst?.region_id || form.region_id });
+                }}
+              >
+                <option value="">— None —</option>
+                {institutions.map((i) => (
+                  <option key={i.id} value={i.id}>{i.name} ({i.pid})</option>
+                ))}
+              </select>
+              <p className="text-xs text-brand-text-muted mt-1">Institution users can only see this institution's records.</p>
+            </div>
+          )}
 
           <div>
             <label className="label">Region</label>
