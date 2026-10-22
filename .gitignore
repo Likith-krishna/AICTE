@@ -9,4 +9,11 @@ backend/uploads/
 backend/*.db-wal
 backend/*.db-shm
 backend/test_*.db
+backend/.e2e-test.db
+backend/.e2e-test.db-wal
+backend/.e2e-test.db-shm
+backend/backups/flowguard_pre_*.db
 .pytest_cache/
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/

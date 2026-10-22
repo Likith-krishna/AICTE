@@ -1,4 +1,4 @@
-import { Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { Bell, LogOut, Menu, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -18,18 +18,26 @@ const ROLE_LABELS: Record<string, string> = {
   audit_reviewer: 'Auditor',
 };
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const { user, logout } = useAuth();
 
   return (
     <header
-      className="h-16 flex items-center justify-between px-6 border-b"
+      className="h-16 flex items-center justify-between px-4 sm:px-6 border-b"
       style={{
         backgroundColor: 'var(--color-header-bg)',
         borderColor: 'var(--color-header-border)',
       }}
     >
-      <div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          className="btn-ghost btn-sm md:hidden"
+          title="Open navigation"
+          aria-label="Open navigation"
+        >
+          <Menu size={20} />
+        </button>
         <h1 className="text-lg font-semibold text-ink-charcoal">AICTE FlowGuard</h1>
       </div>
 

@@ -101,7 +101,13 @@ function DraftEditor({ app, schema }: { app: ApplicationDetail; schema: FormSche
       qc.setQueryData(['application', app.id], updated);
       qc.invalidateQueries({ queryKey: ['applications'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      navigate(`/applications/${app.id}`, { state: { flash: 'Application submitted. Complete the (mock) payment to proceed to scrutiny.' } });
+      // Automatic workflow transitions (payment verification, routing into scrutiny) run
+      // server-side within the same request, so the flash must reflect where the
+      // application actually landed rather than assume payment is still pending.
+      const flash = updated.payment.is_mock
+        ? `Application submitted. Mock payment auto-verified — now at "${updated.stage_label}".`
+        : `Application submitted. Current stage: "${updated.stage_label}".`;
+      navigate(`/applications/${app.id}`, { state: { flash } });
     },
     onError: (err) => setBanner({ tone: 'error', text: errorMessage(err), failures: err instanceof ApiError ? err.failures : undefined }),
   });

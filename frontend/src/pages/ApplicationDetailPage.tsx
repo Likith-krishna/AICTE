@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, CreditCard, Clock3, Building2, CalendarRange, MapPin, Workflow, Ban, RotateCw } from 'lucide-react';
@@ -21,8 +21,24 @@ type Tab = 'timeline' | 'details' | 'clock';
 export function ApplicationDetailPage() {
   const { id = '' } = useParams();
   const location = useLocation();
-  const flash = (location.state as { flash?: string } | null)?.flash;
+  const navigate = useNavigate();
+  // Copied into local state (rather than read from location.state on every
+  // render) so it can be cleared once stale. location.state otherwise lingers
+  // in the browser's session history indefinitely — including across a page
+  // reload — showing an outdated message (e.g. "complete the payment") even
+  // after a later action (confirming payment, a workflow transition) has
+  // already moved the application past what the flash describes.
+  const [flash, setFlash] = useState<string | null>((location.state as { flash?: string } | null)?.flash ?? null);
   const [tab, setTab] = useState<Tab>('timeline');
+  const flashBaselineVersion = useRef<number | null>(null);
+
+  useEffect(() => {
+    if ((location.state as { flash?: string } | null)?.flash) {
+      // Scrub it from history so a reload can't resurrect the stale message.
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const app = useQuery({
     queryKey: ['application', id],
@@ -33,6 +49,19 @@ export function ApplicationDetailPage() {
     queryFn: () => api.get<Timeline>(`/applications/${id}/timeline`),
     enabled: !!app.data,
   });
+
+  useEffect(() => {
+    if (!app.data) return;
+    if (flashBaselineVersion.current === null) {
+      flashBaselineVersion.current = app.data.version;
+      return;
+    }
+    if (flash && app.data.version !== flashBaselineVersion.current) {
+      // Any later action (payment confirmation, a transition, an edit) has
+      // superseded whatever the flash described — drop it.
+      setFlash(null);
+    }
+  }, [app.data, flash]);
 
   if (app.isLoading) return <div className="card"><LoadingSpinner /></div>;
   if (app.error || !app.data) {

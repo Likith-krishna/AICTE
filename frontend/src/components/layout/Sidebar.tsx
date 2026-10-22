@@ -28,7 +28,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Audit Log', path: '/audit', icon: <Settings size={18} />, roles: ['system_admin', 'audit_reviewer'] },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useAuth();
 
@@ -37,12 +42,20 @@ export function Sidebar() {
   );
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen z-30 flex flex-col transition-all duration-200 ${
-        collapsed ? 'w-16' : 'w-60'
-      }`}
-      style={{ backgroundColor: 'var(--color-sidebar-bg)' }}
-    >
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-0 h-screen z-30 flex flex-col w-60 transition-transform duration-200 md:transition-all md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${collapsed ? 'md:w-16' : 'md:w-60'}`}
+        style={{ backgroundColor: 'var(--color-sidebar-bg)' }}
+      >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
         <div className="w-8 h-8 rounded bg-ink-slate flex items-center justify-center text-white font-bold text-sm shrink-0">
@@ -78,6 +91,7 @@ export function Sidebar() {
               backgroundColor: isActive ? 'var(--color-sidebar-active)' : undefined,
             })}
             title={collapsed ? item.label : undefined}
+            onClick={onClose}
           >
             <span className="shrink-0">{item.icon}</span>
             {!collapsed && <span>{item.label}</span>}
@@ -85,13 +99,14 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Collapse Toggle */}
+      {/* Collapse Toggle (desktop only — the mobile drawer always shows full-width labels) */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center h-10 border-t border-white/10 text-white/60 hover:text-white transition-colors"
+        className="hidden md:flex items-center justify-center h-10 border-t border-white/10 text-white/60 hover:text-white transition-colors"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
     </aside>
+    </>
   );
 }
