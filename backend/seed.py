@@ -4,7 +4,8 @@ import uuid
 from datetime import date, datetime, timezone
 
 from sqlalchemy import select
-from app.core.database import engine, async_session_factory, Base
+from app.core.database import async_session_factory
+from app.core.migrate import migrate
 from app.core.security import hash_password
 from app.models.user import User, Role
 from app.models.institution import Region, Institution
@@ -184,14 +185,54 @@ APPLICATION_CATEGORIES = [
 ]
 
 
-async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# --------------------------------------------------------------------------- #
+# Phase 3 demo additions (additive + idempotent: each row is created only if
+# missing, so existing databases keep all data and identifiers).
+# --------------------------------------------------------------------------- #
+PHASE3_INSTITUTIONS = [
+    # pid, name, region, state, city
+    ("AICTE-SR-2024-0002", "Southern Demo College of Engineering", "SR", "Karnataka", "Bengaluru"),
+]
 
+PHASE3_USERS = [
+    # email, name, role, institution pid, region code
+    ("signatory@demo.ac.in", "Authorised Signatory (DIT)", "institution_signatory", "AICTE-NR-2024-0001", "NR"),
+    ("institution2@demo.ac.in", "Institution User (SDCE)", "institution_applicant", "AICTE-SR-2024-0002", "SR"),
+    ("evcmember@flowguard.gov.in", "EVC Member", "evc_member", None, "NR"),
+    ("sac@flowguard.gov.in", "SAC/SHC Committee Member", "sac_shc_member", None, None),
+    ("coordinator@flowguard.gov.in", "Regional Coordinator", "regional_coordinator", None, "NR"),
+    ("scrutiny.sr@flowguard.gov.in", "Scrutiny Officer (SR)", "scrutiny_officer", None, "SR"),
+    ("auditor@flowguard.gov.in", "Audit Reviewer", "audit_reviewer", None, None),
+]
+
+
+async def seed_phase3_demo_data(db) -> int:
+    created = 0
+    regions = {r.code: r.id for r in (await db.execute(select(Region))).scalars().all()}
+    for pid, name, region_code, state, city in PHASE3_INSTITUTIONS:
+        if not (await db.execute(select(Institution).where(Institution.pid == pid))).scalar_one_or_none():
+            db.add(Institution(pid=pid, name=name, institution_type="private",
+                               region_id=regions[region_code], state=state, city=city))
+            created += 1
+    await db.flush()
+    institutions = {i.pid: i.id for i in (await db.execute(select(Institution))).scalars().all()}
+    for email, name, role, pid, region_code in PHASE3_USERS:
+        if not (await db.execute(select(User).where(User.email == email))).scalar_one_or_none():
+            db.add(User(email=email, hashed_password=hash_password("Demo@123"), full_name=name, role=role,
+                        institution_id=institutions.get(pid) if pid else None,
+                        region_id=regions.get(region_code) if region_code else None))
+            created += 1
+    await db.flush()
+    return created
+
+
+async def seed():
     async with async_session_factory() as db:
         existing = await db.execute(select(Role).limit(1))
         if existing.scalar_one_or_none():
-            print("Database already seeded. Skipping.")
+            added = await seed_phase3_demo_data(db)
+            await db.commit()
+            print(f"Base data already present. Phase 3 demo rows added: {added}.")
             return
 
         # Roles
@@ -289,10 +330,13 @@ async def seed():
                 region_id=reg_id,
             ))
 
+        await db.flush()
+        await seed_phase3_demo_data(db)
         await db.commit()
         print("Database seeded successfully.")
         print("Demo credentials: any user above with password 'Demo@123'")
 
 
 if __name__ == "__main__":
+    print(f"Migrations: {migrate()}.")
     asyncio.run(seed())

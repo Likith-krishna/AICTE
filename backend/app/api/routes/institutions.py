@@ -13,12 +13,10 @@ from app.schemas.institution import (
 )
 from app.schemas.common import PaginatedResponse
 from app.services.audit import log_audit_event
+from app.core.scoping import institution_scope, apply_scope, scope_allows
 
 router = APIRouter(prefix="/api/institutions", tags=["institutions"])
 
-INSTITUTION_ROLES = ("institution_head", "institution_applicant", "institution_viewer")
-REGIONAL_ROLES = ("regional_officer", "regional_coordinator")
-ADMIN_ROLES = ("system_admin", "bureau_officer", "competent_authority", "scrutiny_officer")
 
 
 def _enrich_institution(inst: Institution, user_count: int = 0) -> InstitutionDetailResponse:
@@ -55,16 +53,10 @@ async def list_institutions(
     query = select(Institution)
     count_query = select(func.count()).select_from(Institution)
 
-    # Institution-scoped isolation
-    if current_user.role in INSTITUTION_ROLES:
-        if not current_user.institution_id:
-            return PaginatedResponse(items=[], total=0, page=1, page_size=page_size, pages=0)
-        query = query.where(Institution.id == current_user.institution_id)
-        count_query = count_query.where(Institution.id == current_user.institution_id)
-    elif current_user.role in REGIONAL_ROLES:
-        if current_user.region_id:
-            query = query.where(Institution.region_id == current_user.region_id)
-            count_query = count_query.where(Institution.region_id == current_user.region_id)
+    # Server-enforced scoping (institution users: own; regional users: own region)
+    scope = institution_scope(current_user)
+    query = apply_scope(query, scope, institution_col=Institution.id, region_col=Institution.region_id)
+    count_query = apply_scope(count_query, scope, institution_col=Institution.id, region_col=Institution.region_id)
 
     if region_id:
         query = query.where(Institution.region_id == region_id)
@@ -113,17 +105,16 @@ async def get_institution(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Institution users can only view their own institution
-    if current_user.role in INSTITUTION_ROLES and current_user.institution_id != institution_id:
-        raise HTTPException(status_code=403, detail="Access denied to this institution")
-
-    # Regional users can only view institutions in their region
     result = await db.execute(select(Institution).where(Institution.id == institution_id))
     inst = result.scalar_one_or_none()
+    scope = institution_scope(current_user)
     if not inst:
+        # Scoped users get 403 for unknown IDs too, so IDs cannot be probed.
+        if scope.kind != "national":
+            raise HTTPException(status_code=403, detail="Access denied to this institution")
         raise HTTPException(status_code=404, detail="Institution not found")
 
-    if current_user.role in REGIONAL_ROLES and current_user.region_id and inst.region_id != current_user.region_id:
+    if not scope_allows(scope, institution_id=inst.id, region_id=inst.region_id):
         raise HTTPException(status_code=403, detail="Access denied to this institution")
 
     uc = await db.execute(

@@ -17,12 +17,10 @@ from app.services.audit import log_audit_event
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
-VALID_ROLES = [
-    "system_admin", "bureau_officer", "regional_officer", "regional_coordinator",
-    "scrutiny_officer", "evc_chair", "evc_member", "competent_authority",
-    "appellate_authority", "institution_head", "institution_applicant",
-    "institution_viewer", "rule_admin", "audit_reviewer",
-]
+from app.core.roles import ALL_ROLES
+
+# Must match the seeded ``roles`` table (single source: app/core/roles.py).
+VALID_ROLES = sorted(ALL_ROLES)
 
 
 def _enrich_user(user: User) -> UserDetailResponse:

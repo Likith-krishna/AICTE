@@ -21,4 +21,12 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
+DEV_SECRET_KEY = "dev-secret-key-change-in-production"
+
 settings = Settings()
+
+# Refuse to run outside development with the publicly known dev signing key.
+if settings.environment.lower() not in ("development", "test") and settings.secret_key in (
+    DEV_SECRET_KEY, "change-this-to-a-secure-random-string",
+):
+    raise RuntimeError("SECRET_KEY must be set to a strong random value outside development")

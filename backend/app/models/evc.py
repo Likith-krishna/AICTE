@@ -5,7 +5,7 @@ from sqlalchemy import String, Boolean, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.types import GUID, JSONType
+from app.core.types import GUID, JSONType, UTCDateTime
 
 
 class EVCQueueEntry(Base):
@@ -22,9 +22,9 @@ class EVCQueueEntry(Base):
     report_submitted: Mapped[bool] = mapped_column(Boolean, default=False)
     report_data: Mapped[dict | None] = mapped_column(JSONType())
     remarks: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime(),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
@@ -37,4 +37,4 @@ class EVCMemberAssignment(Base):
     evc_entry_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("evc_queue_entries.id"), nullable=False)
     member_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id"), nullable=False)
     role_in_evc: Mapped[str] = mapped_column(String(50), nullable=False, default="MEMBER")
-    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    assigned_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))

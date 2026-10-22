@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import structlog
 
 from app.core.config import settings
-from app.api.routes import auth, health, dashboard, users, institutions
+from app.api.routes import auth, health, dashboard, users, institutions, applications
 
 structlog.configure(
     processors=[
@@ -46,3 +46,4 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(users.router)
 app.include_router(institutions.router)
+app.include_router(applications.router)

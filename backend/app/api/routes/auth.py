@@ -6,6 +6,8 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, get_current_user, require_roles
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse, UserCreate
+from app.core.roles import ALL_ROLES
+from app.services.audit import log_audit_event
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -37,6 +39,11 @@ async def register(
     current_user: User = Depends(require_roles("system_admin")),
     db: AsyncSession = Depends(get_db),
 ):
+    if request.role not in ALL_ROLES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid role: {request.role}")
+    if not (8 <= len(request.password) <= 72):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be 8-72 characters")
+
     existing = await db.execute(select(User).where(User.email == request.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -52,4 +59,13 @@ async def register(
     db.add(user)
     await db.flush()
     await db.refresh(user)
+    await log_audit_event(
+        db,
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        action="USER_CREATED",
+        entity_type="User",
+        entity_id=user.id,
+        changes={"email": user.email, "role": user.role, "via": "auth/register"},
+    )
     return UserResponse.model_validate(user)

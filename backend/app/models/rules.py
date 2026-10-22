@@ -5,7 +5,7 @@ from sqlalchemy import String, Integer, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.types import GUID, JSONType
+from app.core.types import GUID, JSONType, UTCDateTime
 
 
 class APHSourceDocument(Base):
@@ -19,7 +19,7 @@ class APHSourceDocument(Base):
     registered_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="REGISTERED")
     supersedes_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("aph_source_documents.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class APHSourceProvision(Base):
@@ -35,7 +35,7 @@ class APHSourceProvision(Base):
     provision_text: Mapped[str] = mapped_column(Text, nullable=False)
     verified_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
     verification_status: Mapped[str] = mapped_column(String(30), nullable=False, default="CANDIDATE")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class RegulatoryRule(Base):
@@ -58,9 +58,9 @@ class RegulatoryRule(Base):
     effective_until: Mapped[date | None] = mapped_column(Date)
     created_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
     approved_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime(),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
@@ -74,4 +74,4 @@ class RuleReviewHistory(Base):
     reviewer_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id"), nullable=False)
     action: Mapped[str] = mapped_column(String(30), nullable=False)
     remarks: Mapped[str | None] = mapped_column(Text)
-    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    reviewed_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))

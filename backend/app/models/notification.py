@@ -5,7 +5,7 @@ from sqlalchemy import String, Integer, Boolean, Date, DateTime, Text, ForeignKe
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.types import GUID
+from app.core.types import GUID, UTCDateTime
 
 
 class NotificationPolicy(Base):
@@ -18,7 +18,7 @@ class NotificationPolicy(Base):
     template_body: Mapped[str | None] = mapped_column(Text)
     channels: Mapped[str] = mapped_column(String(100), nullable=False, default="IN_APP")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class NotificationEvent(Base):
@@ -32,8 +32,8 @@ class NotificationEvent(Base):
     trigger_date: Mapped[date] = mapped_column(Date, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(500), unique=True, nullable=False)
     is_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class NotificationDelivery(Base):
@@ -46,9 +46,9 @@ class NotificationDelivery(Base):
     subject: Mapped[str | None] = mapped_column(String(500))
     body: Mapped[str | None] = mapped_column(Text)
     delivery_status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    delivered_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    read_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
-    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    next_retry_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))

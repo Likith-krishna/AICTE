@@ -5,7 +5,7 @@ from sqlalchemy import String, Integer, Date, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.types import GUID
+from app.core.types import GUID, UTCDateTime
 
 
 class ComplianceObligation(Base):
@@ -22,10 +22,10 @@ class ComplianceObligation(Base):
     rule_family_code: Mapped[str | None] = mapped_column(String(100))
     rule_version: Mapped[int | None] = mapped_column(Integer)
     verified_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
-    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    verified_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime(),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
@@ -45,8 +45,8 @@ class EvidenceSubmission(Base):
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="SUBMITTED")
     reviewer_remarks: Mapped[str | None] = mapped_column(Text)
     reviewed_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class InstitutionDocument(Base):
@@ -64,8 +64,8 @@ class InstitutionDocument(Base):
     issue_date: Mapped[date | None] = mapped_column(Date)
     expiry_date: Mapped[date | None] = mapped_column(Date)
     verified_by: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("users.id"))
-    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verified_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     application_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("applications.id"))
     replaces_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("institution_documents.id"))
     uploaded_by: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("users.id"), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))

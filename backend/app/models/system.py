@@ -5,7 +5,7 @@ from sqlalchemy import String, Integer, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.types import GUID, JSONType
+from app.core.types import GUID, JSONType, UTCDateTime
 
 
 class BackgroundJob(Base):
@@ -17,13 +17,13 @@ class BackgroundJob(Base):
     idempotency_key: Mapped[str | None] = mapped_column(String(500), unique=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
     locked_by: Mapped[str | None] = mapped_column(String(255))
-    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    locked_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, default=5)
-    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    next_run_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
     last_error: Mapped[str | None] = mapped_column(Text)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
 
 
 class AuditEvent(Base):
@@ -37,4 +37,4 @@ class AuditEvent(Base):
     entity_id: Mapped[uuid.UUID | None] = mapped_column(GUID())
     changes: Mapped[dict | None] = mapped_column(JSONType())
     ip_address: Mapped[str | None] = mapped_column(String(50))
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(timezone.utc))
